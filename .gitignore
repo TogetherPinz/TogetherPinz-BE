@@ -1,0 +1,56 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+src/main/java/com/capstone/common/config
+src/main/java/com/capstone/common/util
+
+src/main/resources/application.properties
+
+OAUTH2_SETUP_GUIDE.md
+src/main/java/com/capstone/auth/oauth2/README.md
+
+WARP.md
+SWAGGER_GUIDE.md
+TASK_SWAGGER_COMPLETE.md
+
+docker/.env.example
+docker/docker-compose.yml
+docker/README.md
+
+Dockerfile
+docker/deploy-to-dockerhub.sh

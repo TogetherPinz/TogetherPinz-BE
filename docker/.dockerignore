@@ -1,0 +1,33 @@
+# Git
+.git
+../.gitignore
+.gitattributes
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+
+# Build outputs
+build/
+target/
+*.log
+
+# Gradle
+.gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+HELP.md
+WARP.md
+
+# Docker
+../Dockerfile
+docker-compose*
+.dockerignore
