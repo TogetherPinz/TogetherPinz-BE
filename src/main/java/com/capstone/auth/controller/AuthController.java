@@ -5,8 +5,6 @@ import com.capstone.auth.service.AuthService;
 import com.capstone.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -128,6 +126,23 @@ public class AuthController {
         String token = authorization.substring(7);
         VerifyTokenResponse response = authService.verifyToken(token);
         return ApiResponse.success(response);
+    }
+
+    @Operation(
+        summary = "OAuth2 로그인 (Google)",
+        description = "Google OAuth2 ID Token을 사용하여 로그인하고 JWT 토큰을 발급받습니다. " +
+                      "프론트엔드에서 Google OAuth로 받은 ID Token을 전송하면, 서버에서 검증 후 JWT 액세스 토큰과 리프레시 토큰을 반환합니다."
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OAuth2 로그인 성공, JWT 토큰 반환"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "유효하지 않은 ID Token")
+    })
+    @PostMapping("/oauth2/google")
+    public ApiResponse<LoginResponse> oauth2GoogleLogin(
+            @Parameter(description = "Google ID Token 요청 정보", required = true)
+            @Valid @RequestBody OAuth2LoginRequest request) {
+        LoginResponse response = authService.oauth2Login(request.getIdToken());
+        return ApiResponse.success(response, "OAuth2 로그인이 성공했습니다.");
     }
 
 }

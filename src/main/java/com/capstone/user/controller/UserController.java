@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -32,11 +33,11 @@ public class UserController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<UserInfo> createUser(
+    public ResponseEntity<ApiResponse<UserInfo>> createUser(
             @Parameter(description = "사용자 생성 요청 정보", required = true)
             @RequestBody CreateUserRequest request) {
         UserInfo userInfo = userService.createUser(request);
-        return ApiResponse.success(userInfo, "사용자 생성이 성공했습니다.");
+        return ResponseEntity.ok(ApiResponse.success(userInfo, "사용자 생성이 성공했습니다."));
     }
 
     @Operation(
@@ -49,11 +50,11 @@ public class UserController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @GetMapping("/{id}")
-    public ApiResponse<UserInfo> getUserProfile(
+    public ResponseEntity<ApiResponse<UserInfo>> getUserProfile(
             @Parameter(description = "사용자 ID", required = true, example = "1")
             @PathVariable Long id) {
         UserInfo userInfo = userService.getUserProfile(id);
-        return ApiResponse.success(userInfo);
+        return ResponseEntity.ok(ApiResponse.success(userInfo));
     }
 
     @Operation(
