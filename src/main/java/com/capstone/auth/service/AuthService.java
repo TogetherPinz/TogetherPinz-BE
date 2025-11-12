@@ -49,11 +49,6 @@ public class AuthService {
     /** 사용자 등록 */
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        // 비밀번호 확인 검증
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
-        }
-
         // 사용자 생성
         CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .username(request.getUsername())

@@ -21,10 +21,6 @@ public class RegisterRequest {
     @Size(min = 4, max =255, message = "비밀번호는 4자 이상 255자 이하여야 합니다")
     private String password;
 
-    @Schema(description = "비밀번호 확인", example = "securePassword!")
-    @NotBlank(message = "비밀번호 확인은 필수입니다")
-    private String confirmPassword;
-
     @Schema(description = "이름", example = "홍길동")
     @NotBlank(message = "이름은 필수입니다")
     @Size(min = 2, max = 30, message = "이름은 2자 이상 30자 이하여야 합니다")
