@@ -124,7 +124,7 @@ WebSocket을 통해 실시간으로 알림을 전송받을 수 있습니다.
 
 ## API 문서
 ```
-http://togetherpinz.cloud
+https://togetherpinz.cloud
 ```
 
 ## 보안
