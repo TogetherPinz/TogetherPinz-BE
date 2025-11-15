@@ -1,6 +1,8 @@
 package com.capstone.auth.controller;
 
 import com.capstone.auth.dto.*;
+import com.capstone.user.dto.FindUsernameRequest;
+import com.capstone.user.dto.FindUsernameResponse;
 import com.capstone.auth.service.AuthService;
 import com.capstone.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -49,6 +52,7 @@ public class AuthController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (아이디 또는 비밀번호 불일치)")
     })
     @PostMapping("/login")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<LoginResponse> login(
             @Parameter(description = "로그인 요청 정보", required = true)
             @Valid @RequestBody LoginRequest request) {
@@ -94,6 +98,20 @@ public class AuthController {
     }
 
     @Operation(
+        summary = "아이디 찾기",
+        description = "이름과 이메일을 통해 사용자의 아이디를 찾습니다."
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "아이디 찾기 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 정보 불일치")
+    })
+    @PostMapping("/username")
+    public ApiResponse<FindUsernameResponse> findUsername(FindUsernameRequest request) {
+        FindUsernameResponse response = authService.findUsername(request);
+        return ApiResponse.success(response, "아이디 찾기가 완료되었습니다.");
+    }
+
+    @Operation(
         summary = "비밀번호 재설정",
         description = "사용자 아이디와 이메일을 확인하여 새로운 비밀번호로 변경합니다."
     )
@@ -130,8 +148,8 @@ public class AuthController {
 
     @Operation(
         summary = "OAuth2 로그인 (Google)",
-        description = "Google OAuth2 ID Token을 사용하여 로그인하고 JWT 토큰을 발급받습니다. " +
-                      "프론트엔드에서 Google OAuth로 받은 ID Token을 전송하면, 서버에서 검증 후 JWT 액세스 토큰과 리프레시 토큰을 반환합니다."
+        description = "Android에서 구글 로그인을 통해 생성한 ID Token을 검증하여 사용자를 인증합니다. " +
+                      "ID Token이 유효하면 새 사용자를 생성하거나 기존 사용자로 로그인 처리하고, JWT 액세스 토큰과 리프레시 토큰을 반환합니다."
     )
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OAuth2 로그인 성공, JWT 토큰 반환"),

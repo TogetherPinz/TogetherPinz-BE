@@ -3,8 +3,7 @@
 
 -- Drop tables if they exist (in reverse order of dependencies)
 DROP TABLE IF EXISTS notifications CASCADE;
-DROP TABLE IF EXISTS groups CASCADE;
-DROP TABLE IF EXISTS task_time_info CASCADE;
+DROP TABLE IF EXISTS members CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS pins CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -32,58 +31,38 @@ CREATE INDEX idx_phone ON users(phone);
 CREATE TABLE pins (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
-    description VARCHAR(500),
+    address VARCHAR(255),
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
-    user_id BIGINT NOT NULL,
     notification_radius INTEGER DEFAULT 100,
     current_member_count INTEGER DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    version BIGINT NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_pins_user_id ON pins(user_id);
 CREATE INDEX idx_pins_location ON pins(latitude, longitude);
 
 -- Tasks table
 CREATE TABLE tasks (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
-    description TEXT,
     completed BOOLEAN NOT NULL DEFAULT FALSE,
     completed_at TIMESTAMP,
-    user_id BIGINT NOT NULL,
     pin_id BIGINT,
+    start_date_time TIMESTAMP,
+    end_date_time TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     version BIGINT NOT NULL DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (pin_id) REFERENCES pins(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_tasks_user_id ON tasks(user_id);
 CREATE INDEX idx_tasks_pin_id ON tasks(pin_id);
 CREATE INDEX idx_tasks_completed ON tasks(completed);
 
--- Task time info table
-CREATE TABLE task_time_info (
-    id BIGSERIAL PRIMARY KEY,
-    task_id BIGINT NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_task_time_info_task_id ON task_time_info(task_id);
-CREATE INDEX idx_task_time_info_start_time ON task_time_info(start_time);
-CREATE INDEX idx_task_time_info_end_time ON task_time_info(end_time);
-
--- Groups table
-CREATE TABLE groups (
+-- Members table
+CREATE TABLE members (
     id BIGSERIAL PRIMARY KEY,
     pin_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -96,8 +75,8 @@ CREATE TABLE groups (
     UNIQUE (pin_id, user_id)
 );
 
-CREATE INDEX idx_groups_pin_id ON groups(pin_id);
-CREATE INDEX idx_groups_user_id ON groups(user_id);
+CREATE INDEX idx_groups_pin_id ON members(pin_id);
+CREATE INDEX idx_groups_user_id ON members(user_id);
 
 -- Notifications table
 CREATE TABLE notifications (

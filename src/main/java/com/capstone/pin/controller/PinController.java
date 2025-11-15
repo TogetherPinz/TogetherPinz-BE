@@ -1,6 +1,7 @@
 package com.capstone.pin.controller;
 
 import com.capstone.common.dto.ApiResponse;
+import com.capstone.common.util.SecurityUtil;
 import com.capstone.pin.dto.*;
 import com.capstone.pin.service.PinService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +20,13 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/pin")
+@RequestMapping("/api/pins")
 @RequiredArgsConstructor
 @Tag(name = "핀(Pin)", description = "핀 관리 API")
 public class PinController {
 
     private final PinService pinService;
+    private final SecurityUtil securityUtil;
 
     @Operation(
         summary = "핀 생성",
@@ -37,10 +40,10 @@ public class PinController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PinInfo> createPin(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId,
             @Parameter(description = "핀 생성 요청 정보", required = true)
-            @Valid @RequestBody CreatePinRequest request) {
+            @Valid @RequestBody CreatePinRequest request,
+            HttpServletRequest httpRequest) {
+        Long userId = securityUtil.getUserIdFromRequest(httpRequest);
         PinInfo pinInfo = pinService.createPin(userId, request);
         return ApiResponse.success(pinInfo, "핀이 생성되었습니다.");
     }
@@ -55,14 +58,9 @@ public class PinController {
     })
     @GetMapping
     public ApiResponse<List<PinInfo>> getPins(
-            @Parameter(description = "사용자 ID (선택사항)", example = "1")
-            @RequestParam(required = false) Long userId) {
-        List<PinInfo> pins;
-        if (userId != null) {
-            pins = pinService.getUserPins(userId);
-        } else {
-            pins = pinService.getAllPins();
-        }
+            HttpServletRequest httpRequest) {
+        Long userId = securityUtil.getUserIdFromRequest(httpRequest);
+        List<PinInfo> pins = pinService.getUserPins(userId);
         return ApiResponse.success(pins);
     }
 
@@ -94,15 +92,15 @@ public class PinController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "핀을 찾을 수 없음")
     })
-    @PutMapping("/{id}")
+    @PutMapping("/{pinId}")
     public ApiResponse<PinInfo> updatePin(
             @Parameter(description = "핀 ID", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId,
+            @PathVariable Long pinId,
             @Parameter(description = "핀 수정 요청 정보", required = true)
-            @Valid @RequestBody UpdatePinRequest request) {
-        PinInfo pinInfo = pinService.updatePin(userId, id, request);
+            @Valid @RequestBody UpdatePinRequest request,
+            HttpServletRequest httpRequest) {
+        Long userId = securityUtil.getUserIdFromRequest(httpRequest);
+        PinInfo pinInfo = pinService.updatePin(userId, pinId, request);
         return ApiResponse.success(pinInfo, "핀이 수정되었습니다.");
     }
 
@@ -116,34 +114,14 @@ public class PinController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "핀을 찾을 수 없음")
     })
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{pinId}")
     public ApiResponse<Void> deletePin(
             @Parameter(description = "핀 ID", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId) {
-        pinService.deletePin(userId, id);
+            @PathVariable Long pinId,
+            HttpServletRequest httpRequest) {
+        Long userId = securityUtil.getUserIdFromRequest(httpRequest);
+        pinService.deletePin(userId, pinId);
         return ApiResponse.success(null, "핀이 삭제되었습니다.");
-    }
-
-    @Operation(
-        summary = "근처 핀 조회",
-        description = "특정 위치 근처의 핀들을 조회합니다. 반경(km) 내에 있는 핀들을 반환합니다.",
-        security = @SecurityRequirement(name = "Bearer Authentication")
-    )
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
-    })
-    @GetMapping("/nearby")
-    public ApiResponse<List<PinInfo>> getPinsNearby(
-            @Parameter(description = "위도", required = true, example = "37.5665")
-            @RequestParam Double latitude,
-            @Parameter(description = "경도", required = true, example = "126.9780")
-            @RequestParam Double longitude,
-            @Parameter(description = "반경(km)", example = "5.0")
-            @RequestParam(defaultValue = "5.0") Double radiusKm) {
-        List<PinInfo> pins = pinService.getPinsNearLocation(latitude, longitude, radiusKm);
-        return ApiResponse.success(pins);
     }
 
 }

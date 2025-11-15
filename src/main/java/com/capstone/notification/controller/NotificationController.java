@@ -18,7 +18,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/notification")
+@RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 @Tag(name = "알림(Notification)", description = "알림 관리 API")
 public class NotificationController {
@@ -37,11 +37,11 @@ public class NotificationController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<NotificationInfo> createNotification(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId,
+            @Parameter(description = "사용자 username", required = true, example = "test")
+            @RequestParam String username,
             @Parameter(description = "알림 생성 요청 정보", required = true)
             @Valid @RequestBody CreateNotificationRequest request) {
-        NotificationInfo notificationInfo = notificationService.createNotification(userId, request);
+        NotificationInfo notificationInfo = notificationService.createNotification(username, request);
         return ApiResponse.success(notificationInfo, "알림이 생성되었습니다.");
     }
 
@@ -55,13 +55,13 @@ public class NotificationController {
     })
     @GetMapping
     public ApiResponse<List<NotificationInfo>> getNotifications(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId,
+            @Parameter(description = "사용자 username", required = true, example = "test")
+            @RequestParam String username,
             @Parameter(description = "읽음 여부 (선택사항)", example = "false")
             @RequestParam(required = false) Boolean isRead,
-            @Parameter(description = "알림 타입 (선택사항)", example = "LOCATION")
+            @Parameter(description = "알림 타입 (선택사항)", example = "LOCATION 또는 TASK 또는 SYSTEM 또는 GROUP")
             @RequestParam(required = false) String type) {
-        List<NotificationInfo> notifications = notificationService.getNotifications(userId, isRead, type);
+        List<NotificationInfo> notifications = notificationService.getNotifications(username, isRead, type);
         return ApiResponse.success(notifications);
     }
 
@@ -74,11 +74,11 @@ public class NotificationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음")
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{notificationId}")
     public ApiResponse<NotificationInfo> getNotification(
             @Parameter(description = "알림 ID", required = true, example = "1")
-            @PathVariable Long id) {
-        NotificationInfo notificationInfo = notificationService.getNotification(id);
+            @PathVariable Long notificationId) {
+        NotificationInfo notificationInfo = notificationService.getNotification(notificationId);
         return ApiResponse.success(notificationInfo);
     }
 
@@ -92,13 +92,13 @@ public class NotificationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음")
     })
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{notificationId}")
     public ApiResponse<Void> deleteNotification(
             @Parameter(description = "알림 ID", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId) {
-        notificationService.deleteNotification(userId, id);
+            @PathVariable Long notificationId,
+            @Parameter(description = "사용자 username", required = true, example = "1")
+            @RequestParam String username) {
+        notificationService.deleteNotification(username, notificationId);
         return ApiResponse.success(null, "알림이 삭제되었습니다.");
     }
 
@@ -112,33 +112,14 @@ public class NotificationController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "알림을 찾을 수 없음")
     })
-    @PostMapping("/{id}/read")
+    @PostMapping("/{notificationId}/read")
     public ApiResponse<NotificationInfo> markAsRead(
             @Parameter(description = "알림 ID", required = true, example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId) {
-        NotificationInfo notificationInfo = notificationService.markAsRead(userId, id);
+            @PathVariable Long notificationId,
+            @Parameter(description = "사용자 username", required = true, example = "1")
+            @RequestParam String username) {
+        NotificationInfo notificationInfo = notificationService.markAsRead(username, notificationId);
         return ApiResponse.success(notificationInfo, "알림을 읽음 처리했습니다.");
-    }
-
-    @Operation(
-        summary = "위치 기반 알림 트리거",
-        description = "사용자의 현재 위치를 기반으로 해당 위치에 있는 핀의 할 일에 대한 알림을 생성합니다.",
-        security = @SecurityRequirement(name = "Bearer Authentication")
-    )
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "알림 트리거 성공"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    @PostMapping("/trigger")
-    public ApiResponse<List<NotificationInfo>> triggerLocationNotifications(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId,
-            @Parameter(description = "위치 정보", required = true)
-            @Valid @RequestBody LocationTriggerRequest request) {
-        List<NotificationInfo> notifications = notificationService.triggerLocationBasedNotifications(userId, request);
-        return ApiResponse.success(notifications, notifications.size() + "개의 알림이 생성되었습니다.");
     }
 
     @Operation(
@@ -174,9 +155,9 @@ public class NotificationController {
     })
     @GetMapping("/unread-count")
     public ApiResponse<Long> getUnreadCount(
-            @Parameter(description = "사용자 ID", required = true, example = "1")
-            @RequestParam Long userId) {
-        Long count = notificationService.getUnreadCount(userId);
+            @Parameter(description = "사용자 username", required = true, example = "1")
+            @RequestParam String username) {
+        Long count = notificationService.getUnreadCount(username);
         return ApiResponse.success(count);
     }
 

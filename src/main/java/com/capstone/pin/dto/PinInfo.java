@@ -1,6 +1,7 @@
 package com.capstone.pin.dto;
 
 import com.capstone.pin.entity.Pin;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -15,25 +16,25 @@ public class PinInfo {
 
     private Long id;
     private String title;
-    private String description;
+    private String address;
     private Double latitude;
     private Double longitude;
-    private Long userId;
-    private String username;
     private Integer notificationRadius;
     private Integer currentMemberCount;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime updatedAt;
 
     public static PinInfo fromEntity(Pin pin) {
         return PinInfo.builder()
                 .id(pin.getId())
                 .title(pin.getTitle())
-                .description(pin.getDescription())
+                .address(pin.getAddress())
                 .latitude(pin.getLatitude())
                 .longitude(pin.getLongitude())
-                .userId(pin.getUser().getId())
-                .username(pin.getUser().getUsername())
                 .notificationRadius(pin.getNotificationRadius())
                 .currentMemberCount(pin.getCurrentMemberCount())
                 .createdAt(pin.getCreatedAt())

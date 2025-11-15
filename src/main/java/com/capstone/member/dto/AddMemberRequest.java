@@ -1,4 +1,4 @@
-package com.capstone.group.dto;
+package com.capstone.member.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateGroupRequest {
+public class AddMemberRequest {
 
-    @NotNull(message = "핀 ID는 필수입니다.")
-    private Long pinId;
+    @NotNull(message = "초대하려는 사용자의 username은 필수입니다.")
+    private String username;
 }

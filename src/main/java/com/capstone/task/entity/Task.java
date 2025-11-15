@@ -30,9 +30,6 @@ public class Task implements Serializable {
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
     @Column(name = "completed", nullable = false)
     private Boolean completed = false;
 
@@ -40,12 +37,14 @@ public class Task implements Serializable {
     private LocalDateTime completedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pin_id")
     private Pin pin;
+
+    @Column(name = "start_date_time")
+    private LocalDateTime startDateTime;
+
+    @Column(name = "end_date_time")
+    private LocalDateTime endDateTime;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -60,25 +59,32 @@ public class Task implements Serializable {
     private Long version;
 
     @Builder
-    public Task(String title, String description, User user, Pin pin) {
+    public Task(String title, Pin pin, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         this.title = title;
-        this.description = description;
-        this.user = user;
         this.pin = pin;
         this.completed = false;
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
     }
 
     /** 할 일 수정 */
-    public void updateTask(String title, String description, Pin pin) {
+    public void updateTask(String title, Pin pin, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         if (title != null) {
             this.title = title;
         }
-        if (description != null) {
-            this.description = description;
-        }
+
         if (pin != null) {
             this.pin = pin;
         }
+
+        if (startDateTime != null) {
+            this.startDateTime = startDateTime;
+        }
+
+        if (endDateTime != null) {
+            this.endDateTime = endDateTime;
+        }
+
     }
 
     /** 할 일 완료 처리 */

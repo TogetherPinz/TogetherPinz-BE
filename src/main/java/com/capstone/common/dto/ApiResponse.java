@@ -1,5 +1,6 @@
 package com.capstone.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,6 +17,8 @@ public class ApiResponse<T> {
     private T data;
     private String message;
     private String statusCode;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime timestamp;
     private String path;
 

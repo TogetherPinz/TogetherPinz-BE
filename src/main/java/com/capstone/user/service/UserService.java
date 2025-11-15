@@ -21,7 +21,7 @@ public class UserService {
     /** 사용자 생성 */
     @Transactional
     public UserInfo createUser(CreateUserRequest request) {
-        // 중붙 검사
+        // 중복 검사
         if (userCacheService.isExistsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("이미 사용 중인 사용자명입니다.");
         }
@@ -43,17 +43,17 @@ public class UserService {
         return UserInfo.fromEntity(savedUser);
     }
 
-    /** 프로필 조회 */
-    public UserInfo getUserProfile(Long userId) {
-        User user = userCacheService.getUserById(userId)
+    /** username으로 프로필 조회 */
+    public UserInfo getUserProfile(String username) {
+        User user = userCacheService.getUserByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         return UserInfo.fromEntity(user);
     }
 
     /** 프로필 수정 */
     @Transactional
-    public UserInfo updateUserProfile(Long userId, UpdateUserRequest request) {
-        User user = userCacheService.getUserById(userId)
+    public UserInfo updateUserProfile(String username, UpdateUserRequest request) {
+        User user = userCacheService.getUserByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         // 이메일 중붙 검사
@@ -72,12 +72,11 @@ public class UserService {
 
     /** 프로필 삭제 */
     @Transactional
-    public void deleteUserProfile(Long userId) {
-        if (userCacheService.getUserById(userId).isEmpty()) {
-            throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
-        }
-        userCacheService.deleteUser(userId);
-        log.info("사용자 삭제 성공: userId={}", userId);
+    public void deleteUserProfile(String username) {
+        User user = userCacheService.getUserByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        userCacheService.deleteUser(user.getId());
+        log.info("사용자 삭제 성공: userId={}", user.getId());
     }
 
     /** 아이디 찾기 (전화번호 또는 이메일) */

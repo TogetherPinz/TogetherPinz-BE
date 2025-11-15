@@ -57,3 +57,7 @@ Dockerfile
 docker/deploy-to-dockerhub.sh
 
 src/main/java/com/capstone/common/filter
+
+src/main/java/com/capstone/common/security
+
+GEMINI.md

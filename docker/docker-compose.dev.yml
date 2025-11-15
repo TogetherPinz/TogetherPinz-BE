@@ -3,7 +3,7 @@ services:
   # PostgreSQL Database (개발 환경)
   postgres:
     image: postgres:15-alpine
-    container_name: capstone-postgres-dev
+    container_name: docker-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: capstone
@@ -14,10 +14,10 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - capstone-dev-network
+      - capstone-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -27,15 +27,15 @@ services:
   # Redis Cache (개발 환경)
   redis:
     image: redis:7-alpine
-    container_name: capstone-redis-dev
+    container_name: docker-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
-      - redis_dev_data:/data
+      - redis_data:/data
     networks:
-      - capstone-dev-network
+      - capstone-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -43,11 +43,11 @@ services:
       retries: 5
 
 networks:
-  capstone-dev-network:
+  capstone-network:
     driver: bridge
 
 volumes:
-  postgres_dev_data:
+  postgres_data:
     driver: local
-  redis_dev_data:
+  redis_data:
     driver: local

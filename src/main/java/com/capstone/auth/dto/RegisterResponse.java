@@ -19,7 +19,7 @@ public class RegisterResponse {
     private String message;
     private UserInfo userInfo;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime registeredDate;
 
     public static RegisterResponse from(User user) {

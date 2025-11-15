@@ -1,4 +1,4 @@
-package com.capstone.group.enums;
+package com.capstone.member.enums;
 
 import lombok.Getter;
 

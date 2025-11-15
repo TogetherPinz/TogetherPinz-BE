@@ -3,6 +3,8 @@ package com.capstone.auth.service;
 import com.capstone.auth.dto.*;
 import com.capstone.common.util.JwtUtil;
 import com.capstone.user.dto.CreateUserRequest;
+import com.capstone.user.dto.FindUsernameRequest;
+import com.capstone.user.dto.FindUsernameResponse;
 import com.capstone.user.dto.UserInfo;
 import com.capstone.user.entity.User;
 import com.capstone.user.repository.UserRepository;
@@ -64,6 +66,7 @@ public class AuthService {
         return RegisterResponse.builder()
                 .username(userInfo.getUsername())
                 .message("회원가입이 완료되었습니다.")
+                .userInfo(userInfo)
                 .build();
     }
 
@@ -173,6 +176,12 @@ public class AuthService {
                 .build();
     }
 
+    /** 아이디 찾기 */
+    public FindUsernameResponse findUsername(FindUsernameRequest request) {
+        return userService.findUsername(request);
+    }
+
+
     /** 비밀번호 재설정 */
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
@@ -226,11 +235,14 @@ public class AuthService {
         }
     }
 
-    /** OAuth2 로그인 (Google ID Token 검증) */
+    /** 
+     * OAuth2 로그인 (Google ID Token 검증)
+     * Android에서 받은 Google ID Token을 검증하고, 새 사용자를 생성하거나 기존 사용자로 로그인 처리
+     */
     @Transactional
     public LoginResponse oauth2Login(String idToken) {
         try {
-            // Google ID Token 검증
+            // 1. Google ID Token 검증
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                     new NetHttpTransport(), 
                     GsonFactory.getDefaultInstance())
@@ -242,7 +254,7 @@ public class AuthService {
                 throw new IllegalArgumentException("유효하지 않은 Google ID Token입니다.");
             }
 
-            // 사용자 정보 추출
+            // 2. 사용자 정보 추출
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
             String email = payload.getEmail();
             String name = (String) payload.get("name");
@@ -250,14 +262,14 @@ public class AuthService {
 
             log.info("Google ID Token 검증 성공: email={}, name={}", email, name);
 
-            // 기존 사용자 조회 또는 신규 사용자 생성
+            // 3. 기존 사용자 조회 또는 신규 사용자 생성
             User user = getOrCreateOAuth2User(email, name, providerId);
 
-            // JWT 토큰 생성
+            // 4. JWT 액세스 토큰 및 리프레시 토큰 생성
             String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getId());
             String refreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getId());
 
-            // Refresh Token Redis에 저장
+            // 5. Refresh Token을 Redis에 저장 (세션 관리)
             String redisKey = REFRESH_TOKEN_PREFIX + user.getUsername();
             redisTemplate.opsForValue().set(
                     redisKey,
@@ -266,8 +278,9 @@ public class AuthService {
                     TimeUnit.SECONDS
             );
 
-            log.info("OAuth2 로그인 성공: {}", user.getUsername());
+            log.info("OAuth2 로그인 성공: username={}, provider=google", user.getUsername());
 
+            // 6. 로그인 응답 반환
             return LoginResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -282,16 +295,22 @@ public class AuthService {
         }
     }
 
-    /** OAuth2 사용자 조회 또는 생성 */
+    /** 
+     * OAuth2 사용자 조회 또는 생성
+     * 1. provider + providerId로 기존 사용자 조회
+     * 2. 없으면 이메일로 기존 사용자 조회
+     * 3. 없으면 신규 사용자 생성
+     */
     private User getOrCreateOAuth2User(String email, String name, String providerId) {
         // 1. provider + providerId로 기존 사용자 조회
         Optional<User> userOptional = userRepository.findByProviderAndProviderId("google", providerId);
         
         if (userOptional.isPresent()) {
+            log.info("기존 OAuth2 사용자 로그인: username={}", userOptional.get().getUsername());
             return userOptional.get();
         }
         
-        // 2. 이메일로 기존 사용자 조회
+        // 2. 이메일로 기존 사용자 조회 (이메일이 같은 일반 회원이 있는 경우)
         Optional<User> emailUserOptional = userRepository.findByEmail(email);
         
         if (emailUserOptional.isPresent()) {
@@ -302,34 +321,49 @@ public class AuthService {
                     "이미 " + existingUser.getProvider() + " 계정으로 연동되어 있습니다."
                 );
             }
+            // 일반 회원가입으로 생성된 계정 (provider가 null)
+            if (existingUser.getProvider() == null) {
+                throw new IllegalArgumentException(
+                    "이미 일반 회원가입으로 등록된 이메일입니다. 일반 로그인을 사용해주세요."
+                );
+            }
         }
         
-        // 3. 신규 사용자 생성
+        // 3. 신규 OAuth2 사용자 생성
         String username = generateOAuth2Username("google", providerId);
+        // OAuth2 사용자는 비밀번호를 사용하지 않으므로 랜덤 UUID를 암호화하여 저장
+        String randomPassword = passwordEncoder.encode(UUID.randomUUID().toString());
         
         User newUser = User.builder()
                 .username(username)
-                .password(UUID.randomUUID().toString()) // OAuth2 사용자는 비밀번호 사용 안함
-                .name(name != null ? name : "사용자")
+                .password(randomPassword)
+                .name(name != null ? name : "Google 사용자")
                 .email(email)
                 .provider("google")
                 .providerId(providerId)
                 .build();
         
-        return userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+        log.info("신규 OAuth2 사용자 생성: username={}, email={}", username, email);
+        
+        return savedUser;
     }
 
-    /** OAuth2 사용자를 위한 고유 username 생성 */
+    /** 
+     * OAuth2 사용자를 위한 고유 username 생성
+     * 형식: {provider}_{providerId} (예: google_123456789)
+     */
     private String generateOAuth2Username(String provider, String providerId) {
         String baseUsername = provider + "_" + providerId;
         
-        // username 중복 체크
+        // username 중복 체크 (만약 중복이면 숫자 suffix 추가)
         String username = baseUsername;
         int suffix = 1;
         while (userRepository.findByUsername(username).isPresent()) {
             username = baseUsername + "_" + suffix++;
         }
         
+        log.debug("OAuth2 username 생성: {}", username);
         return username;
     }
 

@@ -1,8 +1,8 @@
-package com.capstone.group.entity;
+package com.capstone.member.entity;
 
 import com.capstone.user.entity.User;
 import com.capstone.pin.entity.Pin;
-import com.capstone.group.enums.MemberRole;
+import com.capstone.member.enums.MemberRole;
 import lombok.*;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,11 +14,11 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "groups")
+@Table(name = "members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Group implements Serializable {
+public class Member implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -53,7 +53,7 @@ public class Group implements Serializable {
     private Long version;
 
     @Builder
-    public Group(Pin pin, User user, MemberRole role) {
+    public Member(Pin pin, User user, MemberRole role) {
         this.pin = pin;
         this.user = user;
         this.role = role;

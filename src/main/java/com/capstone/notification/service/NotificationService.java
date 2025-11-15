@@ -33,9 +33,9 @@ public class NotificationService {
 
     /** 알림 생성 */
     @Transactional
-    public NotificationInfo createNotification(Long userId, CreateNotificationRequest request) {
+    public NotificationInfo createNotification(String username, CreateNotificationRequest request) {
         // 사용자 조회
-        User user = userCacheService.getUserById(userId)
+        User user = userCacheService.getUserByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         // Task 조회 (선택)
@@ -63,14 +63,19 @@ public class NotificationService {
                 .build();
 
         Notification savedNotification = notificationRepository.save(notification);
-        log.info("알림 생성 성공: notificationId={}, userId={}", savedNotification.getId(), userId);
+        log.info("알림 생성 성공: notificationId={}, userId={}", savedNotification.getId(), user.getId());
 
         return NotificationInfo.fromEntity(savedNotification);
     }
 
     /** 알림 조회 (전체 또는 필터링) */
-    public List<NotificationInfo> getNotifications(Long userId, Boolean isRead, String type) {
+    public List<NotificationInfo> getNotifications(String username, Boolean isRead, String type) {
         List<Notification> notifications;
+
+        User user = userCacheService.getUserByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Long userId = user.getId();
 
         if (isRead != null) {
             notifications = notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(userId, isRead);
@@ -94,9 +99,14 @@ public class NotificationService {
 
     /** 알림 삭제 */
     @Transactional
-    public void deleteNotification(Long userId, Long notificationId) {
+    public void deleteNotification(String username, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다."));
+
+        User user = userCacheService.getUserByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Long userId = user.getId();
 
         // 권한 확인
         if (!notification.getUser().getId().equals(userId)) {
@@ -109,74 +119,23 @@ public class NotificationService {
 
     /** 알림 읽음 처리 */
     @Transactional
-    public NotificationInfo markAsRead(Long userId, Long notificationId) {
+    public NotificationInfo markAsRead(String username, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다."));
 
+        User user = userCacheService.getUserByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
         // 권한 확인
-        if (!notification.getUser().getId().equals(userId)) {
+        if (!notification.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("알림 처리 권한이 없습니다.");
         }
 
         notification.markAsRead();
         Notification updatedNotification = notificationRepository.save(notification);
-        log.info("알림 읽음 처리 성공: notificationId={}, userId={}", notificationId, userId);
+        log.info("알림 읽음 처리 성공: notificationId={}, userId={}", notificationId, username);
 
         return NotificationInfo.fromEntity(updatedNotification);
-    }
-
-    /** 위치 기반 알림 트리거 */
-    @Transactional
-    public List<NotificationInfo> triggerLocationBasedNotifications(Long userId, LocationTriggerRequest request) {
-        // 사용자 조회
-        User user = userCacheService.getUserById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 사용자 근처의 핀 조회
-        Double radiusKm = 0.5; // 500m
-        Double latDelta = radiusKm / 111.0;
-        Double lonDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(request.getLatitude())));
-
-        List<Pin> nearbyPins = pinRepository.findPinsNearLocation(
-                request.getLatitude() - latDelta,
-                request.getLatitude() + latDelta,
-                request.getLongitude() - lonDelta,
-                request.getLongitude() + lonDelta
-        );
-
-        // 사용자의 핀만 필터링
-        List<Pin> userPins = nearbyPins.stream()
-                .filter(pin -> pin.getUser().getId().equals(userId))
-                .toList();
-
-        // 각 핀에 대한 할 일 조회 및 알림 생성
-        List<Notification> notifications = userPins.stream()
-                .flatMap(pin -> {
-                    List<Task> tasks = taskRepository.findByPinIdAndCompleted(pin.getId(), false);
-                    return tasks.stream().map(task ->
-                            Notification.builder()
-                                    .user(user)
-                                    .task(task)
-                                    .pin(pin)
-                                    .title("위치 알림: " + pin.getTitle())
-                                    .message("'" + task.getTitle() + "' 할 일이 있습니다.")
-                                    .type(NotificationType.LOCATION.name())
-                                    .build()
-                    );
-                })
-                .collect(Collectors.toList());
-
-        List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
-        log.info("위치 기반 알림 트리거 성공: userId={}, 알림 개수={}", userId, savedNotifications.size());
-
-        // WebSocket으로 실시간 알림 전송
-        savedNotifications.forEach(notification -> {
-            sendPushNotification(userId, NotificationInfo.fromEntity(notification));
-        });
-
-        return savedNotifications.stream()
-                .map(NotificationInfo::fromEntity)
-                .collect(Collectors.toList());
     }
 
     /** 푸시 알림 전송 (WebSocket) */
@@ -195,8 +154,11 @@ public class NotificationService {
     }
 
     /** 읽지 않은 알림 개수 조회 */
-    public Long getUnreadCount(Long userId) {
-        return notificationRepository.countByUserIdAndIsRead(userId, false);
+    public Long getUnreadCount(String username) {
+        User user = userCacheService.getUserByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        return notificationRepository.countByUserIdAndIsRead(user.getId(), false);
     }
 
 }

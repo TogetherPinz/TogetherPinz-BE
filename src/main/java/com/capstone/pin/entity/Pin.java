@@ -29,18 +29,14 @@ public class Pin implements Serializable {
     @Column(name = "title", nullable = false, length = 100)
     private String title;
 
-    @Column(name = "description", length = 500)
-    private String description;
+    @Column(name = "address", length = 255)
+    private String address;
 
     @Column(name = "latitude")
     private Double latitude;
 
     @Column(name = "longitude")
     private Double longitude;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
 
     @Column(name = "notification_radius")
     private Integer notificationRadius;
@@ -61,23 +57,22 @@ public class Pin implements Serializable {
     private Long version;
 
     @Builder
-    public Pin(String title, String description, Double latitude, Double longitude, User user, Integer notificationRadius, Integer currentMemberCount) {
+    public Pin(String title, String address, Double latitude, Double longitude, Integer notificationRadius, Integer currentMemberCount) {
         this.title = title;
-        this.description = description;
+        this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.user = user;
         this.notificationRadius = notificationRadius != null ? notificationRadius : 100;
         this.currentMemberCount = currentMemberCount != null ? currentMemberCount : 1;
     }
 
     /** 핀 정보 수정 */
-    public void updatePin(String title, String description, Double latitude, Double longitude, Integer notificationRadius) {
+    public void updatePin(String title, String address, Double latitude, Double longitude, Integer notificationRadius) {
         if (title != null) {
             this.title = title;
         }
-        if (description != null) {
-            this.description = description;
+        if (address != null) {
+            this.address = address;
         }
         if (latitude != null) {
             this.latitude = latitude;

@@ -1,6 +1,7 @@
 package com.capstone.notification.dto;
 
 import com.capstone.notification.entity.Notification;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -18,13 +19,18 @@ public class NotificationInfo {
     private String message;
     private String type;
     private Boolean isRead;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime readAt;
+    
     private Long userId;
     private String username;
     private Long taskId;
     private String taskTitle;
     private Long pinId;
     private String pinTitle;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
 
     public static NotificationInfo fromEntity(Notification notification) {
